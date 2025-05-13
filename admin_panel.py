@@ -59,7 +59,9 @@ class AdminApp:
         self.correct_entry.pack()
 
         tk.Button(self.root, text="Salvar pergunta", command=self.save_question).pack(pady=10)
-        tk.Button(self.root, text="Sair", command=self.login_screen).pack()
+        tk.Button(self.root, text="Gerenciar Perguntas", command=self.manage_questions).pack(pady=5)
+        tk.Button(self.root, text="Sair", command=self.login_screen).pack(pady=5)
+
 
     def save_question(self):
         question = self.q_entry.get().strip()
@@ -92,6 +94,63 @@ class AdminApp:
 
         messagebox.showinfo("Sucesso", "Pergunta adicionada com sucesso!")
         self.load_question_form()
+
+    def manage_questions(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        tk.Label(self.root, text="Perguntas Cadastradas", font=("Arial", 16, "bold")).pack(pady=10)
+
+        frame = tk.Frame(self.root)
+        frame.pack(expand=True, fill="both")
+
+        # Scrollbar
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side="right", fill="y")
+
+        listbox = tk.Listbox(frame, yscrollcommand=scrollbar.set, width=80)
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, question FROM questions ORDER BY id")
+        questions = cursor.fetchall()
+        conn.close()
+
+        for q in questions:
+            listbox.insert(tk.END, f"ID {q[0]}: {q[1]}")
+
+        listbox.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=listbox.yview)
+
+        # Campo para deletar
+        tk.Label(self.root, text="Digite o ID da pergunta para deletar:").pack(pady=5)
+        self.delete_entry = tk.Entry(self.root)
+        self.delete_entry.pack()
+
+        tk.Button(self.root, text="Deletar", command=self.delete_question).pack(pady=10)
+        tk.Button(self.root, text="Voltar", command=self.load_question_form).pack(pady=5)
+
+    def delete_question(self):
+        try:
+            qid = int(self.delete_entry.get())
+        except ValueError:
+            messagebox.showerror("Erro", "ID inválido.")
+            return
+
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM questions WHERE id = %s", (qid,))
+        if cursor.fetchone() is None:
+            conn.close()
+            messagebox.showerror("Erro", "Pergunta não encontrada.")
+            return
+
+        cursor.execute("DELETE FROM questions WHERE id = %s", (qid,))
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Sucesso", f"Pergunta ID {qid} deletada.")
+        self.manage_questions()  # Recarrega a lista
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -7,7 +7,7 @@ import subprocess
 class QuizApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Quiz de Lógica de Programação")
+        self.root.title("Quiz Interativo")
         self.root.geometry("500x400")
         
         self.username = ""
